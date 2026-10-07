@@ -1,48 +1,67 @@
-package com.example.lab08.viewmodel
+package com.example.lab08
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lab08.data.Task
-import com.example.lab08.repository.TaskRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
+class TaskViewModel(private val dao: TaskDao) : ViewModel() {
 
-    private val _state = MutableStateFlow(TaskState())
-    val state: StateFlow<TaskState> = _state.asStateFlow()
+    private val _tasks = MutableStateFlow<List<Task>>(emptyList())
+    val tasks: StateFlow<List<Task>> = _tasks
+
+    private val _filter = MutableStateFlow("Todas")
+    val filter: StateFlow<String> = _filter
 
     init {
+        loadTasks()
+    }
+
+    fun loadTasks() {
         viewModelScope.launch {
-            repository.tasks.collect { taskList ->
-                _state.update { it.copy(tasks = taskList) }
-            }
+            _tasks.value = dao.getAllTasks()
         }
     }
 
-    fun onDescriptionChange(newDescription: String) {
-        _state.update { it.copy(newTaskDescription = newDescription) }
+    fun setFilter(newFilter: String) {
+        _filter.value = newFilter
     }
 
-    fun addTask() {
+    fun addTask(description: String) {
         viewModelScope.launch {
-            repository.addTask(_state.value.newTaskDescription)
-            _state.update { it.copy(newTaskDescription = "") }
+            dao.insertTask(Task(description = description))
+            loadTasks()
         }
     }
 
-    fun toggleTask(task: Task) {
+    fun toggleTaskCompletion(task: Task) {
         viewModelScope.launch {
-            repository.toggleTaskStatus(task)
+            val updated = task.copy(isCompleted = !task.isCompleted)
+            dao.updateTask(updated)
+            loadTasks()
+        }
+    }
+
+    fun updateTaskDescription(task: Task, newDescription: String) {
+        viewModelScope.launch {
+            val updated = task.copy(description = newDescription)
+            dao.updateTask(updated)
+            loadTasks()
         }
     }
 
     fun deleteTask(task: Task) {
         viewModelScope.launch {
-            repository.deleteTask(task)
+            dao.deleteTask(task)
+            loadTasks()
+        }
+    }
+
+    fun deleteAllTasks() {
+        viewModelScope.launch {
+            dao.deleteAllTasks()
+            loadTasks()
         }
     }
 }

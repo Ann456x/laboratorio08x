@@ -3,21 +3,28 @@ package com.example.lab08
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.example.lab08.data.AppDatabase
-import com.example.lab08.repository.TaskRepository
-import com.example.lab08.ui.TaskScreen
-import com.example.lab08.viewmodel.TaskViewModel
+import androidx.activity.enableEdgeToEdge
+import androidx.room.Room
+import com.example.lab08.data.TaskDatabase
+import com.example.lab08.ui.theme.Lab08Theme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val database = AppDatabase.getDatabase(this)
-        val repository = TaskRepository(database.taskDao())
-        val viewModel = TaskViewModel(repository)
-
+        enableEdgeToEdge()
         setContent {
-            TaskScreen(viewModel = viewModel)
+            Lab08Theme {
+                val db = Room.databaseBuilder(
+                    applicationContext,
+                    TaskDatabase::class.java,
+                    "task_db"
+                ).fallbackToDestructiveMigration().build()
+
+                val taskDao = db.taskDao()
+                val viewModel = TaskViewModel(taskDao)
+
+                TaskScreen(viewModel)
+            }
         }
     }
 }

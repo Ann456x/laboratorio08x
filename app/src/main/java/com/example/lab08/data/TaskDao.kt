@@ -1,14 +1,17 @@
-package com.example.lab08.data
+package com.example.lab08
 
-import androidx.room.*
-import kotlinx.coroutines.flow.Flow
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
 
 @Dao
 interface TaskDao {
-    @Query("SELECT * FROM tasks ORDER BY id DESC")
-    fun getAllTasks(): Flow<List<Task>>
+    @Query("SELECT * FROM tasks")
+    suspend fun getAllTasks(): List<Task>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert
     suspend fun insertTask(task: Task)
 
     @Update
@@ -16,4 +19,7 @@ interface TaskDao {
 
     @Delete
     suspend fun deleteTask(task: Task)
+
+    @Query("DELETE FROM tasks")
+    suspend fun deleteAllTasks()
 }
